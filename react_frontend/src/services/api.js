@@ -32,9 +32,23 @@ async function jsonFetch(url, options = {}) {
 
 // PUBLIC_INTERFACE
 export async function getHealth(customPath) {
-  const url = customPath
-    ? customPath
-    : `${API_BASE.replace(/\/+$/, '')}/health`;
+  // customPath may be:
+  // - fully qualified URL (http://.../health)
+  // - absolute path (/api/health)
+  // - relative path (health)
+  const base = (API_BASE || '').replace(/\/*$/, '');
+  let url;
+  if (customPath) {
+    if (customPath.startsWith('http://') || customPath.startsWith('https://')) {
+      url = customPath;
+    } else if (customPath.startsWith('/')) {
+      url = customPath; // rely on CRA dev proxy or same-origin in prod
+    } else {
+      url = `${base}/${customPath.replace(/^\/*/, '')}`;
+    }
+  } else {
+    url = `${base}/health`;
+  }
   return jsonFetch(url);
 }
 
